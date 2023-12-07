@@ -4,6 +4,7 @@ import Data.Char
 import qualified Data.ByteString.Lazy as BL
 import Data.Set (fromList, toList)
 import Control.Monad
+import Control.Exception
 
 numberOfBytes :: BL.ByteString -> Integer
 numberOfBytes bs = (fromIntegral . BL.length) bs
@@ -29,5 +30,4 @@ main = do
          args <- getArgs
          let fileName = head args
          let options = (toList . fromList . mconcat . (map removeHyphen)) (tail args)
-         join $ putStrLn <$> (++ " " ++ fileName) <$> (wc options) <$> (BL.readFile fileName)
-          
+         handle (\(e :: IOException) -> print e >> return ()) (join $ putStrLn <$> (++ " " ++ fileName) <$> (wc options) <$> (BL.readFile fileName))
