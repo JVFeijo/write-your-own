@@ -10,16 +10,17 @@ numberOfBytes :: BL.ByteString -> Integer
 numberOfBytes bs = (fromIntegral . BL.length) bs
 
 isValidOptionAux :: String -> Bool
-isValidOptionAux (c:cs) | c == 'c' = True
-                        | otherwise = False
+isValidOptionAux [] = True
+isValidOptionAux (c:cs) | c == 'c' = True && isValidOptionAux cs
+                        | otherwise = error "Invalid Option"
 
 isValidOption :: String -> Bool
 isValidOption ('-':cs) = isValidOptionAux cs
-isValidOption _ = False
+isValidOption _ = error "Invalid Option"
 
 removeHyphen :: String -> String
 removeHyphen str | isValidOption str == True = tail str
-                 | otherwise = str
+                 | otherwise = error "Invalid Option"
 
 wc :: String -> BL.ByteString -> String
 wc [] bs = show (numberOfBytes bs)
