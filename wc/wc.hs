@@ -5,30 +5,34 @@ import qualified Data.ByteString.Lazy as BL
 import Data.Set (fromList, toList)
 import Control.Monad
 import Control.Exception
+import Data.List
+
+data ValidOption = C
+
+data InvalidOptionException = IVE String
+
+hasDuplicates :: Eq a => [a] -> Bool
+hasDuplicates xs = length (nub xs) /= length xs
+
+checkDuplicate :: String -> Either InvalidOptionException String
+checkDuplicate str | hasDuplicates str = Left (IVE "Invalid Option provided")
+                   | otherwise = Right str
+
+removeHyphen :: String -> Either InvalidOptionException String
+removeHyphen ('-':[]) = Left (IVE "Invalid Option provided")
+removeHyphen ('-':cs) = Right cs
+removeHyphen _ = Left (IVE "Invalid Option provided")
+
+parseOptions :: [String] -> Either InvalidOptionException [ValidOption]
+parseOptions strs = (traverse removeHyphen strs) >>= (checkDuplicate . mconcat) >>= (traverse isValidOption)
+
+isValidOption :: Char -> Either InvalidOptionException ValidOption
+isValidOption ch | ch == 'c' = Right C
+                 | otherwise = Left (IVE "Invalid Option")
 
 numberOfBytes :: BL.ByteString -> Integer
 numberOfBytes bs = (fromIntegral . BL.length) bs
 
-isValidOptionAux :: String -> Bool
-isValidOptionAux [] = True
-isValidOptionAux (c:cs) | c == 'c' = True && isValidOptionAux cs
-                        | otherwise = error "Invalid Option"
-
-isValidOption :: String -> Bool
-isValidOption ('-':cs) = isValidOptionAux cs
-isValidOption _ = error "Invalid Option"
-
-removeHyphen :: String -> String
-removeHyphen str | isValidOption str == True = tail str
-                 | otherwise = error "Invalid Option"
-
-wc :: String -> BL.ByteString -> String
+wc :: [ValidOption] -> BL.ByteString -> String
 wc [] bs = show (numberOfBytes bs)
-wc (c:cs) bs | c == 'c' = show (numberOfBytes bs)
-
-
-main = do
-         args <- getArgs
-         let fileName = head args
-         let options = (toList . fromList . mconcat . (map removeHyphen)) (tail args)
-         handle (\(e :: IOException) -> print e >> return ()) (join $ putStrLn <$> (++ " " ++ fileName) <$> (wc options) <$> (BL.readFile fileName))
+wc (C : rest) bs = show (numberOfBytes bs)
