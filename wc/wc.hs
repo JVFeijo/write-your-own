@@ -9,7 +9,7 @@ import Control.Monad
 import Control.Exception
 import Data.List
 
-data ValidOption = C | L deriving (Show)
+data ValidOption = C | L | W deriving (Show)
 
 data InvalidOptionException = IVE String deriving (Show)
 
@@ -31,6 +31,7 @@ parseOptions strs = (traverse removeHyphen strs) >>= (checkDuplicate . mconcat) 
 isValidOption :: Char -> Either InvalidOptionException ValidOption
 isValidOption ch | ch == 'c' = Right C
                  | ch == 'l' = Right L
+                 | ch == 'w' = Right W
                  | otherwise = Left (IVE "Invalid Option provided")
 
 numberOfBytes :: BL.ByteString -> Integer
@@ -39,9 +40,13 @@ numberOfBytes = fromIntegral . BL.length
 numberOfLines :: BL.ByteString -> Integer
 numberOfLines = fromIntegral . (BL.count '\n')
 
+numberOfWords :: BL.ByteString -> Integer
+numberOfWords = fromIntegral . length . BL.words
+
 wc :: ValidOption -> BL.ByteString -> String
 wc C bs = show (numberOfBytes bs)
 wc L bs = show (numberOfLines bs)
+wc W bs = show (numberOfWords bs)
 
 formatWCResult :: [String] -> String -> String
 formatWCResult strs fileName = unwords (strs ++ [fileName])
