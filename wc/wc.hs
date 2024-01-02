@@ -1,3 +1,7 @@
+#!/usr/bin/env cabal
+{- cabal:
+build-depends: base, bytestring, containers, utf8-string
+-}
 {-# LANGUAGE OverloadedStrings #-}
 import System.Environment
 import System.IO
