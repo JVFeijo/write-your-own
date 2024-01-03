@@ -13,14 +13,14 @@ import Control.Monad
 import Control.Exception
 import Data.List
 
-data ValidOption = C | L | W | M deriving (Show)
+data ValidOption = C | L | W | M | Default deriving (Show)
 
 data InvalidOptionException = IVE String deriving (Show)
 
 hasDuplicates :: Eq a => [a] -> Bool
 hasDuplicates xs = length (nub xs) /= length xs
 
-checkDuplicate :: String -> Either InvalidOptionException String
+checkDuplicate :: [String] -> Either InvalidOptionException [String]
 checkDuplicate str | hasDuplicates str = Left (IVE "Invalid option provided")
                    | otherwise = Right str
 
@@ -30,14 +30,15 @@ removeHyphen ('-':cs) = Right cs
 removeHyphen _ = Left (IVE "Invalid option provided")
 
 parseOptions :: [String] -> Either InvalidOptionException [ValidOption]
-parseOptions strs = (traverse removeHyphen strs) >>= (checkDuplicate . mconcat) >>= (traverse isValidOption)
+parseOptions [] = Right [Default]
+parseOptions strs = (traverse removeHyphen strs) >>= checkDuplicate >>= (traverse isValidOption)
 
-isValidOption :: Char -> Either InvalidOptionException ValidOption
-isValidOption ch | ch == 'c' = Right C
-                 | ch == 'l' = Right L
-                 | ch == 'w' = Right W
-                 | ch == 'm' = Right M
-                 | otherwise = Left (IVE "Invalid Option provided")
+isValidOption :: String -> Either InvalidOptionException ValidOption
+isValidOption str | str == "c" = Right C
+                  | str == "l" = Right L
+                  | str == "w" = Right W
+                  | str == "m" = Right M
+                  | otherwise = Left (IVE "Invalid Option provided")
 
 numberOfBytes :: BL.ByteString -> Integer
 numberOfBytes = fromIntegral . BL.length
@@ -56,6 +57,7 @@ wc C bs = show (numberOfBytes bs)
 wc L bs = show (numberOfLines bs)
 wc W bs = show (numberOfWords bs)
 wc M bs = show (numberOfCharacters bs)
+wc Default bs = unwords (map ((flip wc) bs) [C, L, W])
 
 formatWCResult :: [String] -> String -> String
 formatWCResult strs fileName = unwords (strs ++ [fileName])
