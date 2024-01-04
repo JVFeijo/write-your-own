@@ -85,5 +85,3 @@ main = do
          case wcArgs of
              Left (IVE errMessage) -> putStrLn errMessage
              Right (handle, filePath, options) -> (BL.hGetContents handle >>= (\content -> return (map (\opt -> wc opt content) options)) >>= (\results -> putStrLn (formatWCResult results filePath)))
---       either (\(IVE err) -> putStrLn err) putStrLn (((map (\opt -> wc opt fileContent)) <$> options) >>= (\results -> return (formatWCResult results fileName)))
-         
