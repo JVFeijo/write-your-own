@@ -66,10 +66,10 @@ formatWCResult strs fileName = unwords (strs ++ [fileName])
 getStdinOrFileHandle :: String -> IO Handle
 getStdinOrFileHandle filePath = do
                                    fileExists <- doesFileExist filePath
-                                   handle <- if fileExists
-                                             then openFile filePath ReadMode
-                                             else return stdin
-                                   return handle
+                                   if fileExists
+                                      then openFile filePath ReadMode
+                                      else return stdin
+                                   
 
 main = do
          args <- getArgs
