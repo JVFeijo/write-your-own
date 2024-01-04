@@ -1,10 +1,11 @@
 #!/usr/bin/env cabal
 {- cabal:
-build-depends: base, bytestring, containers, utf8-string
+build-depends: base, bytestring, containers, utf8-string, directory
 -}
 {-# LANGUAGE OverloadedStrings #-}
 import System.Environment
 import System.IO
+import System.Directory
 import Data.Char
 import qualified Data.ByteString.Lazy.Char8 as BL
 import qualified Data.ByteString.Lazy.UTF8 as BLUTF8
@@ -62,10 +63,20 @@ wc Default bs = unwords (map ((flip wc) bs) [C, L, W])
 formatWCResult :: [String] -> String -> String
 formatWCResult strs fileName = unwords (strs ++ [fileName])
 
+getStdinOrFileHandle :: String -> IO Handle
+getStdinOrFileHandle filePath = do
+                                   fileExists <- doesFileExist filePath
+                                   handle <- if fileExists
+                                             then openFile filePath ReadMode
+                                             else return stdin
+                                   return handle
+
 main = do
          args <- getArgs
-         let fileName = head args
-         let options = parseOptions (tail args)
-         fileContent <- BL.readFile fileName
-         either (\(IVE err) -> putStrLn err)  putStrLn (((map (\opt -> wc opt fileContent)) <$> options) >>= (\results -> return (formatWCResult results fileName)))
+         let (fileName, rawOptions) = if null args then  ("", []) else (head args, tail args)
+         handle <- getStdinOrFileHandle fileName
+         fileContent <- BL.hGetContents handle
+         let options = parseOptions rawOptions
+         either (\(IVE err) -> putStrLn err) putStrLn (((map (\opt -> wc opt fileContent)) <$> options) >>= (\results -> return (formatWCResult results fileName)))
+         hClose handle
          
