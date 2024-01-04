@@ -73,7 +73,7 @@ getStdinOrFileHandle filePath = do
 
 main = do
          args <- getArgs
-         let (fileName, rawOptions) = if null args then  ("", []) else (head args, tail args)
+         let (rawOptions, fileName) = if null args then  ([], "") else (init args, last args)
          handle <- getStdinOrFileHandle fileName
          fileContent <- BL.hGetContents handle
          let options = parseOptions rawOptions
