@@ -3,6 +3,7 @@
 build-depends: base, bytestring, containers, utf8-string, directory
 -}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TupleSections #-}
 import System.Environment
 import System.IO
 import System.Directory
@@ -69,14 +70,20 @@ getStdinOrFileHandle filePath = do
                                    if fileExists
                                       then openFile filePath ReadMode
                                       else return stdin
-                                   
+
+parseWCArgs :: [String] -> IO (Either InvalidOptionException (Handle, FilePath, [ValidOption]))
+parseWCArgs args = do
+                     let (initArgs, lastArg) = if null args then ([], "") else (init args, last args)
+                     fileExists <- doesFileExist lastArg
+                     if fileExists
+                        then (openFile lastArg ReadMode) >>= (\handle -> return (((handle, lastArg,) <$> parseOptions initArgs)))
+                        else return ((stdin, "",) <$> parseOptions (initArgs ++ [lastArg]))
 
 main = do
          args <- getArgs
-         let (rawOptions, fileName) = if null args then  ([], "") else (init args, last args)
-         handle <- getStdinOrFileHandle fileName
-         fileContent <- BL.hGetContents handle
-         let options = parseOptions rawOptions
-         either (\(IVE err) -> putStrLn err) putStrLn (((map (\opt -> wc opt fileContent)) <$> options) >>= (\results -> return (formatWCResult results fileName)))
-         hClose handle
+         wcArgs <- parseWCArgs args
+         case wcArgs of
+             Left (IVE errMessage) -> putStrLn errMessage
+             Right (handle, filePath, options) -> (BL.hGetContents handle >>= (\content -> return (map (\opt -> wc opt content) options)) >>= (\results -> putStrLn (formatWCResult results filePath)))
+--       either (\(IVE err) -> putStrLn err) putStrLn (((map (\opt -> wc opt fileContent)) <$> options) >>= (\results -> return (formatWCResult results fileName)))
          
