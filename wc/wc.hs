@@ -64,13 +64,6 @@ wc Default bs = unwords (map ((flip wc) bs) [C, L, W])
 formatWCResult :: [String] -> String -> String
 formatWCResult strs fileName = unwords (strs ++ [fileName])
 
-getStdinOrFileHandle :: String -> IO Handle
-getStdinOrFileHandle filePath = do
-                                   fileExists <- doesFileExist filePath
-                                   if fileExists
-                                      then openFile filePath ReadMode
-                                      else return stdin
-
 parseWCArgs :: [String] -> IO (Either InvalidOptionException (Handle, FilePath, [ValidOption]))
 parseWCArgs args = do
                      let (initArgs, lastArg) = if null args then ([], "") else (init args, last args)
