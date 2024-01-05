@@ -7,12 +7,9 @@ build-depends: base, bytestring, containers, utf8-string, directory
 import System.Environment
 import System.IO
 import System.Directory
-import Data.Char
 import qualified Data.ByteString.Lazy.Char8 as BL
 import qualified Data.ByteString.Lazy.UTF8 as BLUTF8
 import Data.Set (fromList, toList)
-import Control.Monad
-import Control.Exception
 import Data.List
 
 data ValidOption = C | L | W | M | Default deriving (Show)
@@ -22,7 +19,7 @@ data InvalidOptionException = IVE String deriving (Show)
 hasDuplicates :: Eq a => [a] -> Bool
 hasDuplicates xs = length (nub xs) /= length xs
 
-checkDuplicate :: [String] -> Either InvalidOptionException [String]
+checkDuplicate :: String -> Either InvalidOptionException String
 checkDuplicate str | hasDuplicates str = Left (IVE "Invalid option provided")
                    | otherwise = Right str
 
@@ -33,14 +30,14 @@ removeHyphen _ = Left (IVE "Invalid option provided")
 
 parseOptions :: [String] -> Either InvalidOptionException [ValidOption]
 parseOptions [] = Right [Default]
-parseOptions strs = (traverse removeHyphen strs) >>= checkDuplicate >>= (traverse isValidOption)
+parseOptions strs = (traverse removeHyphen strs) >>= (checkDuplicate . mconcat) >>= (traverse isValidOption)
 
-isValidOption :: String -> Either InvalidOptionException ValidOption
-isValidOption str | str == "c" = Right C
-                  | str == "l" = Right L
-                  | str == "w" = Right W
-                  | str == "m" = Right M
-                  | otherwise = Left (IVE "Invalid Option provided")
+isValidOption :: Char -> Either InvalidOptionException ValidOption
+isValidOption ch | ch == 'c' = Right C
+                 | ch == 'l' = Right L
+                 | ch == 'w' = Right W
+                 | ch == 'm' = Right M
+                 | otherwise = Left (IVE "Invalid Option provided")
 
 numberOfBytes :: BL.ByteString -> Integer
 numberOfBytes = fromIntegral . BL.length
