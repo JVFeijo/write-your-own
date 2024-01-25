@@ -14,10 +14,13 @@ parseEmptyObject = between (symbol "{") (symbol "}") (string "") >> return (JObj
 parseJSON :: Parser JSON
 parseJSON = parseEmptyObject <* eof
 
-filePath = "input-tests/step1/"
+baseDirsPath = "input-tests/"
+testDirs = ["step1/"]
+testDirsPath = map ((++) baseDirsPath) testDirs
 
-main =
-       listDirectory filePath >>=
-       \filesNames -> traverse readFile (((++) filePath) <$> filesNames) >>=
+main =       
+       traverse listDirectory testDirsPath >>=
+       \filesByDir -> return (mconcat (zipWith (fmap . (++)) testDirsPath filesByDir)) >>=
+       \filesPaths -> traverse readFile filesPaths >>=
        \filesContents -> return ((parseString parseJSON mempty) <$> filesContents) >>=
        \results -> traverse print results
