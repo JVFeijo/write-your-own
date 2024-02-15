@@ -5,11 +5,28 @@ build-depends: base, containers, directory, trifecta
 import System.Directory
 import qualified Data.Map as M
 import Text.Trifecta
+import Data.Char
+import Control.Monad
+import Data.Functor
+import Control.Applicative
 
 data JSON = JObject (M.Map String JSON) deriving (Show)
 
 parseEmptyObject :: Parser JSON
 parseEmptyObject = between (symbol "{") (symbol "}") (string "") >> return (JObject M.empty)
+
+jsonChar :: Parser Char
+jsonChar =    string "\\\"" $> '"'
+          <|> string "\\\\" $> '\\'
+          <|> string "\\/"  $> '/'
+          <|> string "\\b"  $> '\b'
+          <|> string "\\f"  $> '\f'
+          <|> string "\\n"  $> '\n'
+          <|> string "\\r"  $> '\r'
+          <|> string "\\t"  $> '\t'
+          <|> (chr . read) <$> (string "\\u" *> replicateM 4 hexDigit)
+          <|> satisfy (\c -> not (c == '\"' || c == '\\' || isControl c))
+
 
 parseJSON :: Parser JSON
 parseJSON = parseEmptyObject <* eof
