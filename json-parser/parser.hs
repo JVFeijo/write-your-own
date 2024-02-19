@@ -2,6 +2,8 @@
 {- cabal:
 build-depends: base, containers, directory, trifecta
 -}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TupleSections #-}
 import System.Directory
 import qualified Data.Map as M
 import Text.Trifecta
@@ -12,8 +14,11 @@ import Control.Applicative
 
 data JSON = JString String | JObject (M.Map String JSON) deriving (Show)
 
-parseEmptyObject :: Parser JSON
-parseEmptyObject = between (symbol "{") (symbol "}") (string "") >> return (JObject M.empty)
+jsonObject :: Parser JSON
+jsonObject = (JObject . M.fromList) <$> (char '{' *> ((,) <$> jsonKey <* char ':' <*> jsonValue) `sepBy` char ',' <* char '}')
+
+jsonKey :: Parser String
+jsonKey = jsonString `surroundedBy` spaces >>= \(JString s) -> return s
 
 jsonChar :: Parser Char
 jsonChar =    string "\\\"" $> '"'
@@ -30,11 +35,14 @@ jsonChar =    string "\\\"" $> '"'
 jsonString :: Parser JSON
 jsonString = JString <$> (char '"' *> many jsonChar <* char '"')
 
+jsonValue :: Parser JSON
+jsonValue = (jsonString <|> jsonObject) `surroundedBy` spaces
+
 parseJSON :: Parser JSON
-parseJSON = parseEmptyObject <* eof
+parseJSON = jsonValue
 
 baseDirsPath = "input-tests/"
-testDirs = ["step1/"]
+testDirs = ["step1/", "step2/"]
 testDirsPath = map ((++) baseDirsPath) testDirs
 
 main =       
