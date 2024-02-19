@@ -10,7 +10,7 @@ import Control.Monad
 import Data.Functor
 import Control.Applicative
 
-data JSON = JObject (M.Map String JSON) deriving (Show)
+data JSON = JString String | JObject (M.Map String JSON) deriving (Show)
 
 parseEmptyObject :: Parser JSON
 parseEmptyObject = between (symbol "{") (symbol "}") (string "") >> return (JObject M.empty)
@@ -27,6 +27,8 @@ jsonChar =    string "\\\"" $> '"'
           <|> (chr . read) <$> (string "\\u" *> replicateM 4 hexDigit)
           <|> satisfy (\c -> not (c == '\"' || c == '\\' || isControl c))
 
+jsonString :: Parser JSON
+jsonString = JString <$> (char '"' *> many jsonChar <* char '"')
 
 parseJSON :: Parser JSON
 parseJSON = parseEmptyObject <* eof
