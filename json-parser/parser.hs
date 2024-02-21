@@ -13,7 +13,7 @@ import Data.Functor
 import Control.Applicative
 
 data JNumber = JDouble Double | JInteger Integer deriving (Show)
-data JSON = JNum JNumber | JString String | JObject (M.Map String JSON) deriving (Show)
+data JSON = JNull | JNum JNumber | JString String | JObject (M.Map String JSON) deriving (Show)
 
 jsonObject :: Parser JSON
 jsonObject = (JObject . M.fromList) <$> (char '{' *> ((,) <$> jsonKey <* char ':' <*> jsonValue) `sepBy` char ',' <* char '}')
@@ -42,8 +42,11 @@ jIntegerOrDouble = integerOrDouble >>= \eitherIntOrDou -> return (either (JNum .
 jsonNumber :: Parser JSON
 jsonNumber = jIntegerOrDouble
 
+jsonNull :: Parser JSON
+jsonNull = string "null" $> JNull
+
 jsonValue :: Parser JSON
-jsonValue = (jsonNumber <|> jsonString <|> jsonObject) `surroundedBy` spaces
+jsonValue = (jsonNull <|> jsonNumber <|> jsonString <|> jsonObject) `surroundedBy` spaces
 
 parseJSON :: Parser JSON
 parseJSON = jsonValue
