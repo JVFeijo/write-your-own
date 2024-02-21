@@ -13,7 +13,7 @@ import Data.Functor
 import Control.Applicative
 
 data JNumber = JDouble Double | JInteger Integer deriving (Show)
-data JSON = JNull | JNum JNumber | JString String | JObject (M.Map String JSON) deriving (Show)
+data JSON = JBool Bool | JNull | JNum JNumber | JString String | JObject (M.Map String JSON) deriving (Show)
 
 jsonObject :: Parser JSON
 jsonObject = (JObject . M.fromList) <$> (char '{' *> ((,) <$> jsonKey <* char ':' <*> jsonValue) `sepBy` char ',' <* char '}')
@@ -45,14 +45,18 @@ jsonNumber = jIntegerOrDouble
 jsonNull :: Parser JSON
 jsonNull = string "null" $> JNull
 
+jsonBool :: Parser JSON
+jsonBool =    string "true" $> JBool True
+          <|> string "false" $> JBool False
+
 jsonValue :: Parser JSON
-jsonValue = (jsonNull <|> jsonNumber <|> jsonString <|> jsonObject) `surroundedBy` spaces
+jsonValue = (jsonNull <|> jsonBool <|> jsonNumber <|> jsonString <|> jsonObject) `surroundedBy` spaces
 
 parseJSON :: Parser JSON
 parseJSON = jsonValue
 
 baseDirsPath = "input-tests/"
-testDirs = ["step1/", "step2/"]
+testDirs = ["step1/", "step2/", "step3/"]
 testDirsPath = map ((++) baseDirsPath) testDirs
 
 main =       
